@@ -10,7 +10,7 @@
 
 The aim of this Reference Implementation is to give feedback to the teachers about the class without interfering with their lecture. The Intelligent Classroom reference implementation monitors the live classroom and provides metrics for Class Attentivity, Class Participation, Happiness Index and also captures automatic attendance.
 
-The data from each classroom can be visualized on Grafana. The complete solution is deployed as a Docker containers. We use different containers for each service [ ClassRoom Analytics RI, InfluxDB Datastore, Grafana Visualizations ]
+The data from each classroom can be visualized on Grafana*. The complete solution is deployed as a Docker* containers. We use different containers for each service [ ClassRoom Analytics RI, InfluxDB* Datastore, Grafana Visualizations ]
 
 
 ![Grafana Charts for a live classroom](/images/Grafana-dashboard.jpg)
@@ -18,7 +18,7 @@ The data from each classroom can be visualized on Grafana. The complete solution
 ## Requirements
 
 ### Hardware
-* 6th to 8th generation Intel® Core™ processors with Iris® Pro graphics or Intel® HD Graphics.
+* 6th to 8th generation Intel® Core™ processor with Iris® Pro graphics or Intel® HD Graphics.
 
 ### Software
 * [Ubuntu\* 16.04 LTS](http://releases.ubuntu.com/16.04/)<br>
@@ -217,7 +217,7 @@ cd inference_engine_samples_build/intel64/Release/
 
 >If there is an error in viewing the GUI, run **xhost +SI:localuser:root** before logging into the container.
 
-### Configure Grafana for Visualizations
+### Configure Grafana* for Visualizations
 
  * Open a browser on the host computer, go to http://localhost:3000.
 
