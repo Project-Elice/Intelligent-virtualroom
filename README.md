@@ -20,6 +20,10 @@ The data from each classroom can be visualized on Grafana*. The complete solutio
 ### Hardware
 * 6th to 8th generation Intel® Core™ processor with Iris® Pro graphics or Intel® HD Graphics.
 
+* IP Camera
+
+>If IP camera is not available, use the USB camera as mentioned [here](#testing-with-usb-camera) or use the sample classroom video file by giving file path as /data/sample.mp4
+
 ### Software
 * [Ubuntu\* 16.04 LTS](http://releases.ubuntu.com/16.04/)<br>
 *Note*: We recommend using a 4.14+ Linux* kernel with this software. Run install_4_14_kernel.sh located in /opt/intel/openvino/install_dependencies/ on the host machine. Run the following command to determine your kernel version:
@@ -31,6 +35,7 @@ The data from each classroom can be visualized on Grafana*. The complete solutio
 * Intel® Distribution of OpenVINO™ toolkit 2019 R1 release
 * Docker (18.09.5)
 * Docker-compose (1.24.0)
+* Git
 * InfluxDB (1.7.6)
 * Grafana (6.1.6)
 
@@ -58,36 +63,44 @@ The Reference Implementation can be deployed as a Docker container for each clas
 
 ### Download the repo
 
-Do a git clone of the repository:-
-```console
-git clone https://github.intel.com/ypande1x/classroom-analytics-cpp.git
-```
+Download the repository or do a git clone of the repository.
+
+>If git is not installed in the host system, Install it using: "_sudo apt update && apt install git_ " command.
 
 ### Pre-requisites
 
 1. Adding Gallery for the students for the Classroom Attendance:-
-    To recognize faces on a frame, the Reference Implementation needs a gallery of reference images. Add the frontal-oriented faces of student faces in the students folder inside the cloned folder. The images should be named as id_name.0.png, id_name.1.png,...
+    To recognize faces on a frame, the Reference Implementation needs a gallery of reference images. Add the frontal-oriented faces of student faces in the students folder inside the cloned folder. Each student can have multiple images. The images should be named as id_name.png, ...
+
+    >The files are located at : data/students/
 
 2. Adding the classroom timetable. The entries for the classroom can be configured in timetable.txt file.
+    >The file is located at :classroom_analytics/timetable.txt
 
-3. Download the Latest [OpenVINO R1](https://software.intel.com/en-us/openvino-toolkit/choose-download) release and keep the downloaded file in the cloned directory.
+3. Download the Latest [OpenVINO R1](https://software.intel.com/en-us/openvino-toolkit/choose-download) release and copy the downloaded .tgz file to the cloned directory
+
+4. Install OpenVINO using this [link](https://docs.openvinotoolkit.org/latest/_docs_install_guides_installing_openvino_linux.html).
+
+5. Install NEO_OCL drivers on the host using this [link](https://docs.openvinotoolkit.org/latest/_docs_install_guides_installing_openvino_linux.html#additional-GPU-steps).
 
 Once the required software packages are downloaded and necessary changes made. We can begin with the installation of the application.
 
 ### Install dependencies
 
-The Reference Implementation depends on two software packages [docker and docker-compose] on the vanilla Ubuntu system. To install the dependencies, open the terminal and run the following commands:-
+The Reference Implementation depends on a few software packages [ docker and docker-compose] on the vanilla Ubuntu system. To install the dependencies, open the terminal, cd into the cloned repository and run the following commands:-
 
-1. Make the script executable.
-
-```console
-sudo chmod +x install_docker.sh
-```
-2. Run the script to download and install the software packages.
+Run the script to download and install the software packages.
 
 ```console
+cd classroom-analytics-cpp
 sudo ./install_docker.sh
  ```
+Run the command below to run docker commands without sudo. Log out and Log in again after running the command.
+
+ ```console
+sudo usermod -aG docker $USER
+  ```
+>If the cloned/downloaded files are  not executable, add executable permission by _"chmod +x (Script Name)"_
 
 ![Installer Script](images/installing_dependencies.gif)
 
@@ -100,22 +113,23 @@ Once the installation is complete, the Docker service will start automatically. 
 ```
 
 The output will look something like this:
-
-> docker.service - Docker Application Container Engine
+```console
+docker.service - Docker Application Container Engine
    Loaded: loaded (/lib/systemd/system/docker.service; enabled; vendor preset: enabled)
    Active: active (running) since Mon 2019-04-18 01:22:00 PDT; 6min ago
      Docs: https://docs.docker.com
  Main PID: 10647 (dockerd)
     Tasks: 21
    CGroup: /system.slice/docker.service
+```
 
 Test docker-compose installation.
 
 ```console
 docker-compose --version
-```
 
-> docker-compose version 1.24.0, build 1110ad01
+docker-compose version 1.24.0, build 1110ad01
+```
 
 ### Build Containers
 
@@ -124,7 +138,7 @@ Once we have the dependencies installed, we will proceed with building the conta
 Run the following command from the cloned folder.
 
 ```console
-./build_ri_image.sh
+./build_ri_images.sh
 ```
 The following script does the following tasks:-
 
@@ -145,32 +159,31 @@ docker images
 
 ### Run Containers
 
-- After building the container we can run the containers by using the docker-compose command. Run the following command from inside the cloned folder.
+- After building the containers, we can run the containers by using the docker-compose command. Run the following command from inside the cloned folder.
 
 ```console
 docker-compose up
 ```
 The above commands create 3 containers from the images, create bridge networks and assign IP addresses, establishes connectivity between the containers and adds persistent storage.
 
-![Running via Compose](/images/docker-compose-up.gif)
+Now open a new terminal to log into the containers and start the application.
+
+>You can also run "docker-compose up -d" to run the containers in the background.
+
+![Running via Compose](images/docker-compose-up.gif)
 *Fig:5: Running Containers via Docker Compose*
 
 ### Start the application
 
-With the docker-compose command, we ran in the previous step we should have all the three container running in the host system.
-
-- The IP Address of the InfluxDB Container is a static IP set to **172.21.0.6**. If there are any issues with IP assignment while docker-compose up, remove the static IP line [Line No: 24] from the compose file and again do docker-compose up and check the IP using the following command in the host system.
-```console
-docker inspect influxdb | grep "IPAddress"
-```
-
-![Ip InfluxDB](/images/influx_ip.png)
+To start the application, we need to login into the Classroom-analytics Container and run the executable binary. With the docker-compose command, we ran in the previous step we should have all the three container running in the host system.
 
 - Open New terminal and log into the Classroom analytics RI shell. To get the Container ID of your running container, use the following command.
 ```console
 docker ps -aqf "name=classroom-analytics"
 92de4bf20987
 ```
+
+- Before logging into the container, run '**xhost +**' in the host terminal to give GUI access to the container.
 
 - Login to the containers using the command
 ```console
@@ -185,43 +198,51 @@ cd inference_engine_samples_build/intel64/Release/
 - Important Flags to use while running the application
 
 ```console
-    --cs, --section (value:DEFAULT)
+--cs, --section (value:DEFAULT)
         specify the class section
-    --d_act, --device (value:CPU)
-        Optional. Specify the target device for Person/Action Detection Retail (CPU, GPU).
-    --d_fd, --device (value:CPU)
-        Optional. Specify the target device for Face Detection Retail (CPU, GPU).
-    --d_lm, --device (value:CPU)
-        Optional. Specify the target device for Landmarks Regression Retail (CPU, GPU).
-    --d_reid, --device (value:CPU)
-        Optional. Specify the target device for Face Reidentification Retail (CPU, GPU).
-    --db_ip, --influxip (value:172.21.0.6)
+--d_act, --device (value:CPU)
+          Optional. Specify the target device for Person/Action Detection Retail (CPU, GPU).
+--d_em, --device (value:CPU)
+          Optional. Specify the target device for Emotions Retail (CPU, GPU).
+--d_fd, --device (value:CPU)
+          Optional. Specify the target device for Face Detection Retail (CPU, GPU).
+--d_hp, --device (value:CPU)
+          Optional. Specify the target device for Headpose Retail (CPU, GPU).
+--d_lm, --device (value:CPU)
+          Optional. Specify the target device for Landmarks Regression Retail (CPU, GPU).
+--d_reid, --device (value:CPU)
+          Optional. Specify the target device for Face Reidentification Retail (CPU, GPU).
+--db_ip, --influxip (value:172.21.0.6)
         specify the Ip Address of the InfluxDB container
-    -h, --help (value:true)
+-h, --help (value:true)
         Print help message.
-    -i, --input
-        Path to input image or video file. Skip this argument to capture frames from a camera.
-    --no-show, --noshow (value:0)
+-i, --input
+        Path to input image or video file.
+--no-show, --noshow (value:0)
         specify no-show = 1 if don't want to see the processed Video
-
 ```
 
--Running the Application.
+- Running the Application.
 
 ```console
-./classroom_analytics -pdc=/data/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/person-detection-action-recognition-0005.xml -c=/data/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.xml -lrc=/data/Retail/object_attributes/landmarks_regression/0009/dldt/landmarks-regression-retail-0009.xml -pc=/data/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.xml -sc=/data/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.xml -frc=/data/Retail/object_reidentification/face/mobilenet_based/dldt/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --noshow=1 --cs=<ClassRoomName >
-```
 
-![Running the RI](/images/docker-exec.gif)
+cd root/inference_engine_samples_build/intel64/Release/
+
+
+./classroom_analytics -pdc=/data/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/person-detection-action-recognition-0005.xml -c=/data/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.xml -lrc=/data/Retail/object_attributes/landmarks_regression/0009/dldt/landmarks-regression-retail-0009.xml -pc=/data/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.xml -sc=/data/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.xml -frc=/data/Retail/object_reidentification/face/mobilenet_based/dldt/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File (/data/sample.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --nosh
+```
+>The default static ip of the InfluxDB container is set to 172.21.0.6
+
+![Running the RI](images/docker-exec.gif)
 *Fig:6: Running the classroom analytics Reference Implementation*
 
 >If there is an error in viewing the GUI, run **xhost +SI:localuser:root** before logging into the container.
 
 ### Configure Grafana* for Visualizations
 
- * Open a browser on the host computer, go to http://localhost:3000.
+ * Open a browser on the host computer, go to http://localhost:3000. (You will get change password prompt while logging into grafana. Skip it.)
 
-* Login with the user as **admin** and password as **admin**.
+* Login with the default credentials as user : **admin** and password : **admin**.
 
 * Click on the Configuration icon present on the left panel.
 
@@ -229,9 +250,9 @@ cd inference_engine_samples_build/intel64/Release/
 
 * Add data source from the InfluxDB container:
 
-  * Name: classroom-analytics
   * Type: InfluxDB
-  * URL: http://(influxDBContainerIpaddress):8086
+  * Name: InfluxDB
+  * URL: http://(influxDBContainerIpaddress/172.21.0.6):8086
   * Database: Analytics
   * Click on “Save and Test”
 
@@ -250,6 +271,7 @@ cd inference_engine_samples_build/intel64/Release/
 ![Live charts](/images/grafana-live-charts.gif)
 *Fig:9: Live data charts from the ClassRoom*
 
+>In case you see no data in the  Charts, hover over the widget name (Happiness Index etc) and go to edit option in every widget and change the classroom name as per your classroom.
 ---
 
 ## Additional Steps
@@ -281,14 +303,34 @@ docker ps -aqf "name=classroom-analytics"
 58dba925f788
 ```
 
-Login to the containers using the command
+Login to the containers in different terminals using the following command:-
 
 ```console
 docker exec -it <container ID> /bin/bash
 ```
-The --i IP Camera stream and --cs flags need to be changed as per the new classrooms being added. In Grafana, import the same Classroom Analytics.json file and change the classroom name as per the one given in the application flags by editing individual panels in the Dashboard.
+Once we are at the container console, execute the command for running the application as mentioned above. The --i IP Camera stream and --cs (section) flag input needs to be changed as per the new classrooms being added.
 
-![Running the RI](/images/multipledashboard.gif)
+For Example, let's say we have two classrooms namely 9B and 10B. We run the following commands after logging into the containers in two different terminals.
+
+- Classroom 1 : Name = 9B
+
+```console
+cd root/inference_engine_samples_build/intel64/Release/
+
+./classroom_analytics -pdc=/data/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/person-detection-action-recognition-0005.xml -c=/data/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.xml -lrc=/data/Retail/object_attributes/landmarks_regression/0009/dldt/landmarks-regression-retail-0009.xml -pc=/data/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.xml -sc=/data/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.xml -frc=/data/Retail/object_reidentification/face/mobilenet_based/dldt/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File (/data/sample.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --noshow=1 --cs=9B
+```
+
+- Classroom 2 : Name = 10B
+
+```console
+cd root/inference_engine_samples_build/intel64/Release/
+
+./classroom_analytics -pdc=/data/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/person-detection-action-recognition-0005.xml -c=/data/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/face-detection-adas-0001.xml -lrc=/data/Retail/object_attributes/landmarks_regression/0009/dldt/landmarks-regression-retail-0009.xml -pc=/data/Transportation/object_attributes/headpose/vanilla_cnn/dldt/head-pose-estimation-adas-0001.xml -sc=/data/Retail/object_attributes/emotions_recognition/0003/dldt/emotions-recognition-retail-0003.xml -frc=/data/Retail/object_reidentification/face/mobilenet_based/dldt/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File ( /data/sample.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --noshow=1 --cs=10B
+```
+
+In Grafana, import the same **Classroom Analytics.json** file and change the classroom name as per the one given in the application flags by editing individual panels in the Dashboard. To edit the panels click on the panel name and select Edit from the drop-down menu. Save the changes when you are done.
+
+![Running the RI](images/multipledashboard.gif)
 *Fig:12: Adding more classes in Grafana*
 
 #### Testing with USB Camera
@@ -301,6 +343,8 @@ devices:
 ```
 While running the application, use _-i=cam_ as the option to use the video from the USB camera.  
 
+>With the above USB camera changes, when running Docker compose for Multiple classrooms the camera will be accessible only in one container, where _-i=cam_  command is run first.
+
 
 #### Launch Script
 
@@ -311,11 +355,19 @@ If you are using the Reference implementation for the first time, run the launch
 
 script usage: $(launch.sh) [-r Classroom Name] [-c Ip Camera Link] [-i InfluxDB Ip]
 ```
+Example:
+
+```console
+./launch.sh -r 9B -i 172.21.0.6
+```
+
+To see the Classroom Analytics charts, follow the steps mentioned [here](#configure-grafana-for-visualizations)
 
 #### Running on the integrated GPU (optional)
-By default, the application runs on the CPU. User can specify which models to run on GPU by using the flags specified above.
 
---- 
+By default, the application runs on the CPU. User can specify which models to run on GPU by using the flags specified.
+
+---
 
 ##### NOTES
 
