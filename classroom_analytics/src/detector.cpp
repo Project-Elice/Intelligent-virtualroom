@@ -10,6 +10,28 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <inference_engine.hpp>
+#include <gflags/gflags.h>
+#include <functional>
+#include <iostream>
+#include <fstream>
+#include <random>
+#include <memory>
+#include <chrono>
+#include <vector>
+#include <string>
+#include <utility>
+#include <algorithm>
+#include <iterator>
+#include <map>
+
+#include <inference_engine.hpp>
+
+#include <samples/ocv_common.hpp>
+#include <samples/slog.hpp>
+
+#include <ie_iextension.h>
+#include <ext_list.hpp>
+
 
 using namespace InferenceEngine;
 
@@ -130,7 +152,7 @@ FaceDetection::FaceDetection(const DetectorConfig& config) :
         _output->setLayout(TensorDesc::getLayoutByDims(_output->getDims()));
 
         input_name_ = inputInfo.begin()->first;
-        net_ = config_.plugin.LoadNetwork(net_reader.getNetwork(), {});
+        net_ = config_.plugin.LoadNetwork(net_reader.getNetwork(), config_.device,{});
     }
 }
 
@@ -172,5 +194,326 @@ void FaceDetection::fetchResults() {
         if (object.confidence > config_.confidence_threshold && object.rect.area() > 0) {
             results.emplace_back(object);
         }
+    }
+}
+
+
+BaseDetection::BaseDetection(std::string topoName,
+                             const std::string &pathToModel,
+                             const std::string &deviceForInference,
+                             int maxBatch, bool isBatchDynamic, bool isAsync,
+                             bool doRawOutputMessages)
+    : plugin(nullptr), topoName(topoName), pathToModel(pathToModel), deviceForInference(deviceForInference),
+      maxBatch(maxBatch), isBatchDynamic(isBatchDynamic), isAsync(isAsync),
+      enablingChecked(false), _enabled(false), doRawOutputMessages(doRawOutputMessages) {
+    if (isAsync) {
+        slog::info << "Use async mode for " << topoName << slog::endl;
+    }
+}
+
+BaseDetection::~BaseDetection() {}
+
+ExecutableNetwork* BaseDetection::operator ->() {
+    return &net;
+}
+
+void BaseDetection::submitRequest() {
+    if (!enabled() || request == nullptr) return;
+    if (isAsync) {
+        request->StartAsync();
+    } else {
+        request->Infer();
+    }
+}
+
+void BaseDetection::wait() {
+    if (!enabled()|| !request || !isAsync)
+        return;
+    request->Wait(IInferRequest::WaitMode::RESULT_READY);
+}
+
+bool BaseDetection::enabled() const  {
+    if (!enablingChecked) {
+        _enabled = !pathToModel.empty();
+        if (!_enabled) {
+            slog::info << topoName << " DISABLED" << slog::endl;
+        }
+        enablingChecked = true;
+    }
+    return _enabled;
+}
+
+HeadPoseDetection::HeadPoseDetection(const std::string &pathToModel,
+                                     const std::string &deviceForInference,
+                                     int maxBatch, bool isBatchDynamic, bool isAsync, bool doRawOutputMessages)
+    : BaseDetection("Head Pose", pathToModel, deviceForInference, maxBatch, isBatchDynamic, isAsync, doRawOutputMessages),
+      outputAngleR("angle_r_fc"), outputAngleP("angle_p_fc"), outputAngleY("angle_y_fc"), enquedFaces(0) {
+}
+
+void HeadPoseDetection::submitRequest()  {
+    if (!enquedFaces) return;
+    if (isBatchDynamic) {
+        request->SetBatch(enquedFaces);
+    }
+    BaseDetection::submitRequest();
+    enquedFaces = 0;
+}
+
+void HeadPoseDetection::enqueue(const cv::Mat &face) {
+    if (!enabled()) {
+        return;
+    }
+    if (enquedFaces == maxBatch) {
+        slog::warn << "Number of detected faces more than maximum(" << maxBatch << ") processed by Head Pose estimator" << slog::endl;
+        return;
+    }
+    if (!request) {
+        request = net.CreateInferRequestPtr();
+    }
+
+    Blob::Ptr inputBlob = request->GetBlob(input);
+
+    matU8ToBlob<uint8_t>(face, inputBlob, enquedFaces);
+
+    enquedFaces++;
+}
+
+HeadPoseDetection::Results HeadPoseDetection::operator[] (int idx) const {
+    Blob::Ptr  angleR = request->GetBlob(outputAngleR);
+    Blob::Ptr  angleP = request->GetBlob(outputAngleP);
+    Blob::Ptr  angleY = request->GetBlob(outputAngleY);
+
+    HeadPoseDetection::Results r = {angleR->buffer().as<float*>()[idx],
+                                    angleP->buffer().as<float*>()[idx],
+                                    angleY->buffer().as<float*>()[idx]};
+
+    if (doRawOutputMessages) {
+        std::cout << "[" << idx << "] element, yaw = " << r.angle_y <<
+                     ", pitch = " << r.angle_p <<
+                     ", roll = " << r.angle_r << std::endl;
+    }
+
+    return r;
+}
+
+CNNNetwork HeadPoseDetection::read() {
+    slog::info << "Loading network files for Head Pose Estimation network" << slog::endl;
+    CNNNetReader netReader;
+    // Read network model
+    netReader.ReadNetwork(pathToModel);
+    // Set maximum batch size
+    netReader.getNetwork().setBatchSize(maxBatch);
+    slog::info << "Batch size is set to  " << netReader.getNetwork().getBatchSize() << " for Head Pose Estimation network" << slog::endl;
+    // Extract model name and load its weights
+    std::string binFileName = fileNameNoExt(pathToModel) + ".bin";
+    netReader.ReadWeights(binFileName);
+
+    // ---------------------------Check inputs -------------------------------------------------------------
+    slog::info << "Checking Head Pose Estimation network inputs" << slog::endl;
+    InputsDataMap inputInfo(netReader.getNetwork().getInputsInfo());
+    if (inputInfo.size() != 1) {
+        throw std::logic_error("Head Pose Estimation network should have only one input");
+    }
+    InputInfo::Ptr& inputInfoFirst = inputInfo.begin()->second;
+    inputInfoFirst->setPrecision(Precision::U8);
+    input = inputInfo.begin()->first;
+    // -----------------------------------------------------------------------------------------------------
+    // ---------------------------Check outputs ------------------------------------------------------------
+    slog::info << "Checking Head Pose Estimation network outputs" << slog::endl;
+    OutputsDataMap outputInfo(netReader.getNetwork().getOutputsInfo());
+    if (outputInfo.size() != 3) {
+        throw std::logic_error("Head Pose Estimation network should have 3 outputs");
+    }
+    for (auto& output : outputInfo) {
+        output.second->setPrecision(Precision::FP32);
+    }
+    std::map<std::string, bool> layerNames = {
+        {outputAngleR, false},
+        {outputAngleP, false},
+        {outputAngleY, false}
+    };
+
+    for (auto && output : outputInfo) {
+        CNNLayerPtr layer = output.second->getCreatorLayer().lock();
+        if (!layer) {
+            throw std::logic_error("Layer pointer is invalid");
+        }
+        if (layerNames.find(layer->name) == layerNames.end()) {
+            throw std::logic_error("Head Pose Estimation network output layer unknown: " + layer->name + ", should be " +
+                                   outputAngleR + " or " + outputAngleP + " or " + outputAngleY);
+        }
+        if (layer->type != "FullyConnected") {
+            throw std::logic_error("Head Pose Estimation network output layer (" + layer->name + ") has invalid type: " +
+                                   layer->type + ", should be FullyConnected");
+        }
+        auto fc = dynamic_cast<FullyConnectedLayer*>(layer.get());
+        if (!fc) {
+            throw std::logic_error("Fully connected layer is not valid");
+        }
+        if (fc->_out_num != 1) {
+            throw std::logic_error("Head Pose Estimation network output layer (" + layer->name + ") has invalid out-size=" +
+                                   std::to_string(fc->_out_num) + ", should be 1");
+        }
+        layerNames[layer->name] = true;
+    }
+
+    slog::info << "Loading Head Pose Estimation model to the "<< deviceForInference << " plugin" << slog::endl;
+
+    _enabled = true;
+    return netReader.getNetwork();
+}
+
+EmotionsDetection::EmotionsDetection(const std::string &pathToModel,
+                                     const std::string &deviceForInference,
+                                     int maxBatch, bool isBatchDynamic, bool isAsync, bool doRawOutputMessages)
+              : BaseDetection("Emotions Recognition", pathToModel, deviceForInference, maxBatch, isBatchDynamic, isAsync, doRawOutputMessages),
+                enquedFaces(0) {
+}
+
+void EmotionsDetection::submitRequest() {
+    if (!enquedFaces) return;
+    if (isBatchDynamic) {
+        request->SetBatch(enquedFaces);
+    }
+    BaseDetection::submitRequest();
+    enquedFaces = 0;
+}
+
+void EmotionsDetection::enqueue(const cv::Mat &face) {
+    if (!enabled()) {
+        return;
+    }
+    if (enquedFaces == maxBatch) {
+        slog::warn << "Number of detected faces more than maximum(" << maxBatch << ") processed by Emotions Recognition network" << slog::endl;
+        return;
+    }
+    if (!request) {
+        request = net.CreateInferRequestPtr();
+    }
+
+    Blob::Ptr inputBlob = request->GetBlob(input);
+
+    matU8ToBlob<uint8_t>(face, inputBlob, enquedFaces);
+
+    enquedFaces++;
+}
+
+std::map<std::string, float> EmotionsDetection::operator[] (int idx) const {
+    // Vector of supported emotions
+    static const std::vector<std::string> emotionsVec = {"neutral", "happy", "sad", "surprise", "anger"};
+    auto emotionsVecSize = emotionsVec.size();
+
+    Blob::Ptr emotionsBlob = request->GetBlob(outputEmotions);
+
+    /* emotions vector must have the same size as number of channels
+     * in model output. Default output format is NCHW, so index 1 is checked */
+    size_t numOfChannels = emotionsBlob->getTensorDesc().getDims().at(1);
+    if (numOfChannels != emotionsVec.size()) {
+        throw std::logic_error("Output size (" + std::to_string(numOfChannels) +
+                               ") of the Emotions Recognition network is not equal "
+                              "to used emotions vector size (" +
+                               std::to_string(emotionsVec.size()) + ")");
+    }
+
+    auto emotionsValues = emotionsBlob->buffer().as<float *>();
+    auto outputIdxPos = emotionsValues + idx * emotionsVecSize;
+    std::map<std::string, float> emotions;
+
+    if (doRawOutputMessages) {
+        std::cout << "[" << idx << "] element, predicted emotions (name = prob):" << std::endl;
+    }
+
+    for (size_t i = 0; i < emotionsVecSize; i++) {
+        emotions[emotionsVec[i]] = outputIdxPos[i];
+
+        if (doRawOutputMessages) {
+            std::cout << emotionsVec[i] << " = " << outputIdxPos[i];
+            if (emotionsVecSize - 1 != i) {
+                std::cout << ", ";
+            } else {
+                std::cout << std::endl;
+            }
+        }
+    }
+
+    return emotions;
+}
+CNNNetwork EmotionsDetection::read() {
+    slog::info << "Loading network files for Emotions Recognition" << slog::endl;
+    InferenceEngine::CNNNetReader netReader;
+    // Read network model
+    netReader.ReadNetwork(pathToModel);
+
+    // Set maximum batch size
+    netReader.getNetwork().setBatchSize(maxBatch);
+    slog::info << "Batch size is set to " << netReader.getNetwork().getBatchSize() << " for Emotions Recognition" << slog::endl;
+
+
+    // Extract model name and load its weights
+    std::string binFileName = fileNameNoExt(pathToModel) + ".bin";
+    netReader.ReadWeights(binFileName);
+
+    // -----------------------------------------------------------------------------------------------------
+
+    // Emotions Recognition network should have one input and one output.
+    // ---------------------------Check inputs -------------------------------------------------------------
+    slog::info << "Checking Emotions Recognition network inputs" << slog::endl;
+    InferenceEngine::InputsDataMap inputInfo(netReader.getNetwork().getInputsInfo());
+    if (inputInfo.size() != 1) {
+        throw std::logic_error("Emotions Recognition network should have only one input");
+    }
+    auto& inputInfoFirst = inputInfo.begin()->second;
+    inputInfoFirst->setPrecision(Precision::U8);
+    input = inputInfo.begin()->first;
+    // -----------------------------------------------------------------------------------------------------
+
+    // ---------------------------Check outputs ------------------------------------------------------------
+    slog::info << "Checking Emotions Recognition network outputs" << slog::endl;
+    InferenceEngine::OutputsDataMap outputInfo(netReader.getNetwork().getOutputsInfo());
+    if (outputInfo.size() != 1) {
+        throw std::logic_error("Emotions Recognition network should have one output layer");
+    }
+    for (auto& output : outputInfo) {
+        output.second->setPrecision(Precision::FP32);
+    }
+
+    DataPtr emotionsOutput = outputInfo.begin()->second;
+
+    if (!emotionsOutput) {
+        throw std::logic_error("Emotions output data pointer is invalid");
+    }
+
+    auto emotionsCreatorLayer = emotionsOutput->getCreatorLayer().lock();
+
+    if (!emotionsCreatorLayer) {
+        throw std::logic_error("Emotions creator layer pointer is invalid");
+    }
+
+    if (emotionsCreatorLayer->type != "SoftMax") {
+        throw std::logic_error("In Emotions Recognition network, Emotion layer ("
+                               + emotionsCreatorLayer->name +
+                               ") should be a SoftMax, but was: " +
+                               emotionsCreatorLayer->type);
+    }
+    slog::info << "Emotions layer: " << emotionsCreatorLayer->name<< slog::endl;
+
+    outputEmotions = emotionsOutput->getName();
+
+    slog::info << "Loading Emotions Recognition model to the "<< deviceForInference << " plugin" << slog::endl;
+    _enabled = true;
+    return netReader.getNetwork();
+}
+
+Load::Load(BaseDetection& detector) : detector(detector) {
+}
+
+void Load::into(Core & plg, std::string device, bool enable_dynamic_batch) const {
+    if (detector.enabled()) {
+        std::map<std::string, std::string> config;
+
+	    detector.net = plg.LoadNetwork(detector.read(), device, config);
+	if(static_cast<IExecutableNetwork::Ptr> (detector.net).get() == nullptr)
+                slog::info << "Null pointer detected" << slog::endl;
+        detector.plugin = &plg;
     }
 }

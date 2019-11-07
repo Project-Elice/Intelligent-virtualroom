@@ -32,7 +32,10 @@ struct CnnConfig {
     bool enabled{true};
 
     /** @brief Plugin to use for inference */
-    InferenceEngine::InferencePlugin plugin;
+    InferenceEngine::Core plugin;
+
+   /** @brief device name */
+   std::string device;
 };
 
 /**
@@ -60,7 +63,7 @@ public:
     /**
     * @brief Prints performance report
     */
-    void PrintPerformanceCounts() const;
+    void PrintPerformanceCounts(std::string fullDeviceName) const;
 
     /**
     * @brief Indicates whether model enabled or not
@@ -113,12 +116,6 @@ public:
 };
 
 class BaseCnnDetection {
-protected:
-    InferenceEngine::InferRequest::Ptr request;
-    const bool isAsync;
-    const bool enabledFlag;
-    std::string topoName;
-
 public:
     explicit BaseCnnDetection(bool enabled = true, bool isAsync = false) :
                               isAsync(isAsync), enabledFlag(enabled) {}
@@ -143,11 +140,17 @@ public:
         return enabledFlag;
     }
 
-    void PrintPerformanceCounts() {
+    void PrintPerformanceCounts(std::string fullDeviceName) {
         if (!enabled()) {
             return;
         }
-        std::cout << "Performance counts for " << topoName << std::endl << std::endl;
-        ::printPerformanceCounts(request->GetPerformanceCounts(), std::cout, false);
+        std::cout << "Performance counts for " << topoName << std::endl;
+        ::printPerformanceCounts(*request, std::cout, fullDeviceName, false);
     }
+	
+protected:
+    InferenceEngine::InferRequest::Ptr request;
+    bool isAsync;
+    bool enabledFlag;
+    std::string topoName;
 };

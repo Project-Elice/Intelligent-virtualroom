@@ -1,8 +1,8 @@
 #!/bin/bash
 # ==============================================================================
-# Copyright (C) <2018-2019> Intel Corporation
+# Copyright (C) 2019 Intel Corporation
 #
-# SPDX-License-Identifier: MIT
+# Setup script for install and build images
 # ==============================================================================
 
 
@@ -13,7 +13,7 @@ if [ -z "$tag" ]; then
 fi
 
 BASEDIR=$(dirname "$0")
-docker build . -t classroom-analytics:$tag 
+docker build . -t classroom-analytics:$tag
 
 
 #Pull grafana Image
@@ -28,4 +28,3 @@ docker pull influxdb:1.7.6
 docker volume create --name=grafana-volume
 docker volume create --name=influxdb-volume
 docker volume create --name=classroom-analytics-volume
-

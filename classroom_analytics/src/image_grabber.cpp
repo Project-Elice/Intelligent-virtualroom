@@ -9,6 +9,8 @@
 
 ImageGrabber::ImageGrabber(const std::string& fname) {
     is_sequence = false;
+    is_read = false;
+    is_opened = false;
     if (fname == "cam") {
         is_opened = cap.open(0);
     } else {
@@ -41,3 +43,9 @@ bool ImageGrabber::GrabNext() {
 }
 
 bool ImageGrabber::Retrieve(cv::Mat& img) { return cap.retrieve(img); }
+
+bool ImageGrabber::LoopVideo() {
+    cap_frame_index = -1;
+    current_video_idx = 0;
+    return cap.set(cv::CAP_PROP_POS_FRAMES, 0);
+}

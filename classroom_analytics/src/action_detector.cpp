@@ -75,7 +75,7 @@ ActionDetection::ActionDetection(const ActionDetectorConfig& config)
         }
 
         input_name_ = inputInfo.begin()->first;
-        net_ = config_.plugin.LoadNetwork(net_reader.getNetwork(), {});
+        net_ = config_.plugin.LoadNetwork(net_reader.getNetwork(), config_.device,{});
     }
 }
 

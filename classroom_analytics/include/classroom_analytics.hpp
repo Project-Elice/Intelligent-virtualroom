@@ -66,7 +66,7 @@ extern "C"
 	double happinessIndex(double total_emotions,double happiness_emotion);
 	//Classroom attentive index
 	double attentiveIndex(double attentive_totalstudents, double attentive_students);
-	//Classroom Participation Index 
+	//Classroom Participation Index	
 	double ParticipationIndex(double StandingStudents, double total_students);
 	// Function called by worker thread to process the next available video frame.
 	void frameRunner();
@@ -244,6 +244,8 @@ DEFINE_double(exp_r_fd, 1.15, face_threshold_output_message);
 /// It is an optional parameter
 DEFINE_int32(last_frame, -1, last_frame_message);
 
+
+
 /**
  * @brief This function show a help message
  */
@@ -251,7 +253,7 @@ DEFINE_int32(last_frame, -1, last_frame_message);
 const char* keys =
     "{ help  h      | | Print help message. }"
     "{ device d     | 0 | camera device number. }"
-    "{ input i      | | Path to input image or video file. Skip this argument to capture frames from a camera.}"
+    "{ input i      | | Path to input camera Stream or video file.}"
     "{ config c     | | Path to .xml file of model containing network configuration. }"
     "{ faceconf fc  | 0.5 | Confidence factor for face detection required. }"
     "{ moodconf mc  | 0.5 | Confidence factor for emotion detection required. }"
@@ -261,11 +263,13 @@ const char* keys =
     "{ landmarksregressionconfig lrc    | | Path to a .xml file of landmarks-regression-retail containing network configuration. }"
     "{ facereidentificationconfig frc    | | Path to a .xml file of face-reidentification-retail containing network configuration. }"
     "{ facegallerypath fgp     | | Path to a faces gallery.}"
-    "{ device d_act |CPU|  Optional. Specify the target device for Person/Action Detection Retail (CPU, GPU).}"
-    "{ device d_fd |CPU|   Optional. Specify the target device for Face Detection Retail (CPU, GPU).}"
-    "{ device d_lm |CPU|   Optional. Specify the target device for Landmarks Regression Retail (CPU, GPU).}"
-    "{ device d_reid |CPU| Optional. Specify the target device for Face Reidentification Retail (CPU, GPU).}"
-     "{ backend b    | 0 | Choose one of computation backends: "
+    "{ device d_act |CPU|  Optional. Specify the target device for Person/Action Detection Retail (CPU, GPU, HDDL).}"
+    "{ device d_fd |CPU|   Optional. Specify the target device for Face Detection Retail (CPU, GPU, HDDL).}"
+    "{ device d_lm |CPU|   Optional. Specify the target device for Landmarks Regression Retail (CPU, GPU,HDDL).}"
+    "{ device d_reid |CPU| Optional. Specify the target device for Face Reidentification Retail (CPU, GPU, HDDL).}"
+    "{ device d_hp |CPU| Optional. Specify the target device for Headpose Retail (CPU, GPU).}"
+    "{ device d_em |CPU| Optional. Specify the target device for Emotions Retail (CPU, GPU).}"
+    "{ backend b    | 0 | Choose one of computation backends: "
                         "0: automatically (by default), "
                         "1: Halide language (http://halide-lang.org/), "
                         "2: Intel's Deep Learning Inference Engine (https://software.intel.com/openvino-toolkit), "
@@ -277,6 +281,6 @@ const char* keys =
                         "3: VPU }"
     "{ section cs  |DEFAULT| specify the class section}"
     "{ influxip db_ip  |172.21.0.6| specify the Ip Address of the InfluxDB container}"
-    "{ noshow no-show  | 0 | specify no-show = 1 if don't want to see the processed Video}";
+    "{ noshow no-show  | 0 | specify no-show = 1 if don't want to see the processed Video}"; 
 #endif
 

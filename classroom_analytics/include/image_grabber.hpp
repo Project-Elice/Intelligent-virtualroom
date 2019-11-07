@@ -18,6 +18,7 @@ public:
     int GetFrameIndex() const;
     int GetFPS() const;
     std::string GetVideoPath() const;
+    bool LoopVideo();
 
 private:
     bool is_sequence;
@@ -28,8 +29,6 @@ private:
     std::vector<std::string> videos;
     std::vector<std::vector<int>> frames;
     int current_video_idx;
-    int current_frame_idx;
     int cap_frame_index;
-
     bool NextVideo();
 };
