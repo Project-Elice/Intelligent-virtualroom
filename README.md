@@ -32,7 +32,7 @@ The data from each classroom can be visualized on Grafana*. The complete solutio
     uname -a
     ```
 * OpenCL™ Runtime Package
-* Intel® Distribution of OpenVINO™ toolkit 2019 R2 release
+* Intel® Distribution of OpenVINO™ toolkit 2019 R3 release
 * Docker (18.09.5)
 * Docker-compose (1.24.0)
 * Git
