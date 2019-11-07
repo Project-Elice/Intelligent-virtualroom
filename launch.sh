@@ -5,9 +5,9 @@
 # Launch script to Install and run the intelligent classroom analytics application
 # ==============================================================================
 
-OPENVINO_WGET_URL=registrationcenter-download.intel.com/akdlm/irc_nas/15693/l_openvino_toolkit_p_2019.2.242.tgz
+OPENVINO_WGET_URL=registrationcenter-download.intel.com/akdlm/irc_nas/15693/l_openvino_toolkit_p_2019.3.334.tgz
 VIDEO_PATH=https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/classroom.mp4
-file=l_openvino_toolkit_p_2019.2.242.tgz
+file=l_openvino_toolkit_p_2019.3.334.tgz
 videofile=resources/classroom.mp4
 
 classroom="9B"
@@ -147,6 +147,7 @@ dns_server_settings()
             if [ $? -ne "0" ];then
                 sudo sed -i 's/dns=dnsmasq/#dns=dnsmasq/g' /etc/NetworkManager/NetworkManager.conf
                 sudo systemctl restart network-manager.service
+		sudo sed -i 's/#dns=dnsmasq/dns=dnsmasq/g' /etc/NetworkManager/NetworkManager.conf
                 #Verify on the host
                 echo "${_green}Udpated DNS server details on host machine${_reset}"
                 cat /etc/resolv.conf
@@ -293,11 +294,11 @@ echo -e "\n"
 
 docker exec -it "$containerId" /bin/bash -c "source /opt/intel/openvino/bin/setupvars.sh && \
 /root/inference_engine_samples_build/intel64/Release/classroom-analytics \
--pdc=/resources/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/FP32/person-detection-action-recognition-0005.xml \
--c=/resources/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/FP32/face-detection-adas-0001.xml \
--lrc=/resources/Retail/object_attributes/landmarks_regression/0009/dldt/FP32/landmarks-regression-retail-0009.xml \
--pc=/resources/Transportation/object_attributes/headpose/vanilla_cnn/dldt/FP32/head-pose-estimation-adas-0001.xml \
--sc=/resources/Retail/object_attributes/emotions_recognition/0003/dldt/FP32/emotions-recognition-retail-0003.xml \
--frc=/resources/Retail/object_reidentification/face/mobilenet_based/dldt/FP32/face-reidentification-retail-0095.xml \
+-pdc=/resources/intel/person-detection-action-recognition-0005/FP32/person-detection-action-recognition-0005.xml \
+-c=/resources/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml \
+-lrc=/resources/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml \
+-pc=/resources/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml \
+-sc=/resources/intel/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml \
+-frc=/resources/intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml \
 -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json \
 -i=\"$camera\" --influxip=$influxIp --cs=$classroom"

@@ -173,7 +173,7 @@ To see the Classroom Analytics application charts, follow the steps mentioned [h
 ![Adding InfluxDB datasource](/docs/Add-grafana-datasource.gif)
 *Fig:7: Adding InfluxDB Datastore in Grafana*
 
-* Import the Grafana.json from the Grafana import dashboards.
+* Import the intelligent-classroom/resources/Grafana.json from the Grafana import dashboards.
 
 ![A sample dashboard](/docs/import-dashboards.png)
 *Fig:8: Adding a sample dashboard in Grafana*
@@ -209,7 +209,7 @@ Models which are not supported:
 2. Landmarks_Regression - landmarks-regression-retail-0009.xml
 
 Steps for running with  Intel® Movidius™ VPU plugin
-1. Install OpenVINO using this link https://docs.openvinotoolkit.org/2019_R2/_docs_install_guides_installing_openvino_linux.html
+1. Install OpenVINO using this link https://docs.openvinotoolkit.org/2019_R3/_docs_install_guides_installing_openvino_linux.html
 2. Intel® Movidius™ VPU drivers should be installed on host machine
 Note : follow the below link to install same on host machine
 https://docs.openvinotoolkit.org/latest/_docs_install_guides_installing_openvino_linux_ivad_vpu.html
@@ -223,12 +223,12 @@ source /opt/intel/openvino/bin/setupvars.sh && $HDDL_INSTALL_DIR/bin/hddldaemon
 
 docker exec -it "$containerId" /bin/bash -c "source /opt/intel/openvino/bin/setupvars.sh && \
 /root/inference_engine_samples_build/intel64/Release/classroom-analytics \
--pdc=/resources/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/FP16/person-detection-action-recognition-0005.xml \
--c=/resources/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/FP16/face-detection-adas-0001.xml \
--lrc=/resources/Retail/object_attributes/landmarks_regression/0009/dldt/FP32/landmarks-regression-retail-0009.xml \
--pc=/resources/Transportation/object_attributes/headpose/vanilla_cnn/dldt/FP16/head-pose-estimation-adas-0001.xml \
--sc=/resources/Retail/object_attributes/emotions_recognition/0003/dldt/FP16/emotions-recognition-retail-0003.xml \
--frc=/resources/Retail/object_reidentification/face/mobilenet_based/dldt/FP32/face-reidentification-retail-0095.xml \
+-pdc=/resources/intel/person-detection-action-recognition-0005/FP16/person-detection-action-recognition-0005.xml \
+-c=/resources/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml \
+-lrc=/resources/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml \
+-pc=/resources/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml \
+-sc=/resources/intel/emotions-recognition-retail-0003/FP16/emotions-recognition-retail-0003.xml \
+-frc=/resources/intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml \
 -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json \
 -i=\"$camera\" --influxip=$influxIp --cs=$classroom -d_fd=HDDL -d_hp=HDDL -d_em=HDDL -d_act=HDDL"
 
@@ -264,7 +264,7 @@ sudo docker run --network=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root
 cd root/inference_engine_samples_build/intel64/Release/
 source /opt/intel/openvino/bin/setupvars.sh
 
-./classroom-analytics -pdc=/resources/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/FP16/person-detection-action-recognition-0005.xml -c=/resources/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/FP16/face-detection-adas-0001.xml -lrc=/resources/Retail/object_attributes/landmarks_regression/0009/dldt/FP32/landmarks-regression-retail-0009.xml -pc=/resources/Transportation/object_attributes/headpose/vanilla_cnn/dldt/FP16/head-pose-estimation-adas-0001.xml -sc=/resources/Retail/object_attributes/emotions_recognition/0003/dldt/FP16/emotions-recognition-retail-0003.xml -frc=/resources/Retail/object_reidentification/face/mobilenet_based/dldt/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=/resources/classroom.mp4 --influxip=172.21.0.6 --cs=9B -d_fd=MYRIAD -d_hp=MYRIAD -d_em=MYRIAD -d_act=MYRIAD
+./classroom-analytics -pdc=/resources/intel/person-detection-action-recognition-0005/FP16/person-detection-action-recognition-0005.xml -c=/resources/intel/face-detection-adas-0001/FP16/face-detection-adas-0001.xml -lrc=/resources/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml -pc=/resources/intel/head-pose-estimation-adas-0001/FP16/head-pose-estimation-adas-0001.xml -sc=/resources/intel/emotions-recognition-retail-0003/FP16/emotions-recognition-retail-0003.xml -frc=/resources/intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=/resources/classroom.mp4 --influxip=172.21.0.6 --cs=9B -d_fd=MYRIAD -d_hp=MYRIAD -d_em=MYRIAD -d_act=MYRIAD
 
 ```
 >If there is an error in viewing the GUI, run **xhost +SI:localuser:root** before logging into the container.
@@ -292,6 +292,7 @@ Now open a new terminal to log into the containers and start the application.
 
 Once we have installed all the dependencies, we will proceed with building the containers for the Classroom-analytics, InfluxDB, Grafana.
 
+Note : Download the latest [OpenVINO R3](https://software.intel.com/en-us/openvino-toolkit/choose-download) release and copy the downloaded .tgz file to the cloned directory
 Run the following command from the cloned folder.
 
 ```console
@@ -370,7 +371,7 @@ cd root/inference_engine_samples_build/intel64/Release/
 
 source /opt/intel/openvino/bin/setupvars.sh
 
-./classroom-analytics -pdc=/resources/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/FP32/person-detection-action-recognition-0005.xml -c=/resources/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/FP32/face-detection-adas-0001.xml -lrc=/resources/Retail/object_attributes/landmarks_regression/0009/dldt/FP32/landmarks-regression-retail-0009.xml -pc=/resources/Transportation/object_attributes/headpose/vanilla_cnn/dldt/FP32/head-pose-estimation-adas-0001.xml -sc=/resources/Retail/object_attributes/emotions_recognition/0003/dldt/FP32/emotions-recognition-retail-0003.xml -frc=/resources/Retail/object_reidentification/face/mobilenet_based/dldt/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File (/resources/classroom.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --cs=9B
+./classroom-analytics -pdc=/resources/intel/person-detection-action-recognition-0005/FP32/person-detection-action-recognition-0005.xml -c=/resources/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -lrc=/resources/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml -pc=/resources/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -sc=/resources/intel/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml -frc=/resources/intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File (/resources/classroom.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --cs=9B
 ```
 >The default static ip of the InfluxDB container is set to 172.21.0.6
 
@@ -444,7 +445,7 @@ For Example, let's say we have two classrooms namely 9B and 10B. We run the foll
 cd root/inference_engine_samples_build/intel64/Release/
 source /opt/intel/openvino/bin/setupvars.sh
 
-./classroom-analytics -pdc=/resources/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/FP32/person-detection-action-recognition-0005.xml -c=/resources/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/FP32/face-detection-adas-0001.xml -lrc=/resources/Retail/object_attributes/landmarks_regression/0009/dldt/FP32/landmarks-regression-retail-0009.xml -pc=/resources/Transportation/object_attributes/headpose/vanilla_cnn/dldt/FP32/head-pose-estimation-adas-0001.xml -sc=/resources/Retail/object_attributes/emotions_recognition/0003/dldt/FP32/emotions-recognition-retail-0003.xml -frc=/resources/Retail/object_reidentification/face/mobilenet_based/dldt/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File (/resources/classroom.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --noshow=1 --cs=9B
+./classroom-analytics -pdc=/resources/intel/person-detection-action-recognition-0005/FP32/person-detection-action-recognition-0005.xml -c=/resources/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -lrc=/resources/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml -pc=/resources/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -sc=/resources/intel/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml -frc=/resources/intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File (/resources/classroom.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --noshow=1 --cs=9B
 ```
 
 - Classroom 2 : Name = 10B
@@ -453,7 +454,7 @@ source /opt/intel/openvino/bin/setupvars.sh
 cd root/inference_engine_samples_build/intel64/Release/
 source /opt/intel/openvino/bin/setupvars.sh
 
-./classroom-analytics -pdc=/resources/Retail/action_detection/pedestrian/rmnet_ssd/0165/dldt/FP32/person-detection-action-recognition-0005.xml -c=/resources/Transportation/object_detection/face/pruned_mobilenet_reduced_ssd_shared_weights/dldt/FP32/face-detection-adas-0001.xml -lrc=/resources/Retail/object_attributes/landmarks_regression/0009/dldt/FP32/landmarks-regression-retail-0009.xml -pc=/resources/Transportation/object_attributes/headpose/vanilla_cnn/dldt/FP32/head-pose-estimation-adas-0001.xml -sc=/resources/Retail/object_attributes/emotions_recognition/0003/dldt/FP32/emotions-recognition-retail-0003.xml -frc=/resources/Retail/object_reidentification/face/mobilenet_based/dldt/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File ( /resources/classroom.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --noshow=1 --cs=10B
+./classroom-analytics -pdc=/resources/intel/person-detection-action-recognition-0005/FP32/person-detection-action-recognition-0005.xml -c=/resources/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml -lrc=/resources/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml -pc=/resources/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml -sc=/resources/intel/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml -frc=/resources/intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json -i=<Ip Of the Ip Camera/Location of video File (/resources/classroom.mp4)/ cam> --influxip=<Ip of InfluxDB Container/172.21.0.6> --noshow=1 --cs=10B
 ```
 Note : Modify resources/Grafana.json file as per class section(--cs) default it is 9B.
 

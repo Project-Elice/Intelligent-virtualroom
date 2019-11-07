@@ -28,7 +28,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y -q --no-
     lsb-release && \
     rm -rf /var/lib/apt/lists/*
 
-#Install OpenVINO R2
+#Install OpenVINO R3
 RUN tar xf l_openvino_toolkit*.tgz && \
     cd l_openvino_toolkit* && \
     sed -i 's/decline/accept/g' silent.cfg && \

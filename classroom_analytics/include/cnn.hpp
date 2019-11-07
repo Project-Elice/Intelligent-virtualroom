@@ -147,10 +147,11 @@ public:
         std::cout << "Performance counts for " << topoName << std::endl;
         ::printPerformanceCounts(*request, std::cout, fullDeviceName, false);
     }
-	
+
 protected:
     InferenceEngine::InferRequest::Ptr request;
-    bool isAsync;
-    bool enabledFlag;
+    const bool isAsync;
+    const bool enabledFlag;
     std::string topoName;
+
 };
