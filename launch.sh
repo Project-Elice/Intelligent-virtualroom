@@ -266,7 +266,8 @@ check_yes_no
     else
 	echo "Downloading classroom video file. Please wait."
 	wget ${VIDEO_PATH}
-	check_for_errors "$?" "classroom video file download failed"
+	check_for_errors "$?" "classroom video file download failed" \
+				"classroom video file download completed"
 	mv classroom.mp4 resources/
     fi
 sudo chmod a+x *.sh
