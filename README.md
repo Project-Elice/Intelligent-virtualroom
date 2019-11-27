@@ -72,7 +72,7 @@ Download the repository or do a git clone of the repository.
 
 >If git is not installed in the host system, Install it using: "sudo apt-get update && apt-get install git" command.
 
-### Pre-requisites
+### Install Pre-requisites
 
 1. Adding gallery for the students for the Classroom Attendance:-
     To recognize faces on a frame, the Classroom Analytics application needs a gallery of reference images. Add the frontal-oriented faces of student faces in the students folder inside the cloned folder. Each student can have multiple images. The images should be named as id_name.png, ...
@@ -82,14 +82,16 @@ Download the repository or do a git clone of the repository.
 2. Adding the classroom timetable. The entries for the classroom can be configured in timetable.txt file.
     >The file is located at :classroom_analytics/timetable.txt
 
+3. The config file /etc/resolv.conf to be updated by adding respective
+   proxy/DNS IP address as follows
 
-### Install dependencies
+    nameserver \< proxy or DNS IP \>
 
-The Classroom Analytics application depends on a few software packages [ docker and docker-compose] on the vanilla Ubuntu system. To install the dependencies, open the terminal, cd into the cloned repository and run the following commands:-
+4. The Classroom Analytics application depends on a few software packages [ docker and docker-compose] on the vanilla Ubuntu system. To install the dependencies, open the terminal, cd into the cloned repository and run the following commands:-
 
-Run the script to download and install the software packages.
+   Run the script to download and install the software packages.
 
->If the cloned/downloaded files are not executable, add executable permission by _"chmod +x install_docker.sh"_
+    >If the cloned/downloaded files are not executable, add executable permission by _"chmod +x install_docker.sh"_
 
 ```console
 cd intelligent-classroom
@@ -190,23 +192,26 @@ To see the Classroom Analytics application charts, follow the steps mentioned [h
 
 By default, the application runs on the CPU. User can specify which models to run on GPU by using the flags specified.
 
+1. Change the executable in launch script as per below:
+
+docker exec -it "$containerId" /bin/bash -c "source /opt/intel/openvino/bin/setupvars.sh && \
+/root/inference_engine_samples_build/intel64/Release/classroom-analytics \
+-pdc=/resources/intel/person-detection-action-recognition-0005/FP32/person-detection-action-recognition-0005.xml \
+-c=/resources/intel/face-detection-adas-0001/FP32/face-detection-adas-0001.xml \
+-lrc=/resources/intel/landmarks-regression-retail-0009/FP32/landmarks-regression-retail-0009.xml \
+-pc=/resources/intel/head-pose-estimation-adas-0001/FP32/head-pose-estimation-adas-0001.xml \
+-sc=/resources/intel/emotions-recognition-retail-0003/FP32/emotions-recognition-retail-0003.xml \
+-frc=/resources/intel/face-reidentification-retail-0095/FP32/face-reidentification-retail-0095.xml \
+-fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json \
+-i=\"$camera\" --influxip=$influxIp --cs=$classroom -d_fd=GPU -d_hp=GPU -d_em=GPU -d_act=GPU -d_reid=GPU -d_lm=GPU"
+
+To run the Classroom Analytics application , follow the steps mentioned in "Automation script for setup and run the application"
+
 #### Running on the  Intel® Movidius™ VPU(optional)
 
-By default, the application runs on the CPU. User can specify which models to run on  Intel® Movidius™ VPU by using the HDDL flags specified.
+By default, the application runs on the CPU. User can specify which models to run on Intel® Movidius™ VPU by using the HDDL flags specified.
 
-Note : If you want to run inference on  Intel® Movidius™ VPU device you'll need an FP16 version of the model.
-
-Models which are supported:
-
-1. Action_Recognition - person-detection-action-recognition-0005.xml
-2. Face_Detection - face-detection-adas-0001.xml
-3. Head_Pose - head-pose-estimation-adas-0001.xml
-4. Emotions_Recognition - emotions-recognition-retail-0003.xml
-
-Models which are not supported:
-
-1. Face_reidentification - face-reidentification-retail-0095.xml
-2. Landmarks_Regression - landmarks-regression-retail-0009.xml
+Note : If you want to run inference on Intel® Movidius™ VPU device you'll need an FP16 version of the model.
 
 Steps for running with  Intel® Movidius™ VPU plugin
 1. Install OpenVINO using this link https://docs.openvinotoolkit.org/2019_R3/_docs_install_guides_installing_openvino_linux.html
@@ -232,11 +237,7 @@ docker exec -it "$containerId" /bin/bash -c "source /opt/intel/openvino/bin/setu
 -fgp=/opt/intel/openvino/inference_engine/samples/classroom_analytics/faces_gallery.json \
 -i=\"$camera\" --influxip=$influxIp --cs=$classroom -d_fd=HDDL -d_hp=HDDL -d_em=HDDL -d_act=HDDL"
 
-#### Running on the  Intel® Movidius™ Neural Compute Stick(optional)
-
-By default, the application runs on the CPU. User can specify which models to run on  Intel® Movidius™ Neural Compute Stick by using the flags specified.
-
-Note : If you want to run inference on  Intel® Movidius™ Neural Compute Stick device you'll need an FP16 version of the model.
+6. To run the Classroom Analytics application , follow the steps mentioned in "Automation script for setup and run the application"
 
 Models which are supported:
 
@@ -250,6 +251,12 @@ Models which are not supported:
 1. Face_reidentification - face-reidentification-retail-0095.xml
 2. Landmarks_Regression - landmarks-regression-retail-0009.xml
 
+#### Running on the Intel® Movidius™ Neural Compute Stick(optional)
+
+By default, the application runs on the CPU. User can specify which models to run on Intel® Movidius™ Neural Compute Stick by using the flags specified.
+
+Note : If you want to run inference on  Intel® Movidius™ Neural Compute Stick device you'll need an FP16 version of the model.
+
 Steps for running with Intel® Movidius™ Neural Compute Stick plugin
 
 1. Run the command manually
@@ -258,7 +265,7 @@ Steps for running with Intel® Movidius™ Neural Compute Stick plugin
 sudo docker run --network=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root.Xauthority:rw" -it --privileged -v /dev:/dev classroom-analytics
 
 ```
-2. Run the below executable in which user can specify the models to run on  Intel® Movidius™ Neural Compute Stick by using the flags specified.
+2. Run the below executable in which user can specify the models to run on Intel® Movidius™ Neural Compute Stick by using the flags specified.
 
 ```console
 cd root/inference_engine_samples_build/intel64/Release/
@@ -268,6 +275,20 @@ source /opt/intel/openvino/bin/setupvars.sh
 
 ```
 >If there is an error in viewing the GUI, run **xhost +SI:localuser:root** before logging into the container.
+
+To see the Classroom Analytics application charts, follow the steps mentioned in "Configure Grafana* for Visualizations"
+
+Models which are supported:
+
+1. Action_Recognition - person-detection-action-recognition-0005.xml
+2. Face_Detection - face-detection-adas-0001.xml
+3. Head_Pose - head-pose-estimation-adas-0001.xml
+4. Emotions_Recognition - emotions-recognition-retail-0003.xml
+
+Models which are not supported:
+
+1. Face_reidentification - face-reidentification-retail-0095.xml
+2. Landmarks_Regression - landmarks-regression-retail-0009.xml
 
 ### Run Containers manually(Optional)
 

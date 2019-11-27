@@ -5,7 +5,7 @@
 # Launch script to Install and run the intelligent classroom analytics application
 # ==============================================================================
 
-OPENVINO_WGET_URL=registrationcenter-download.intel.com/akdlm/irc_nas/15693/l_openvino_toolkit_p_2019.3.334.tgz
+OPENVINO_WGET_URL=registrationcenter-download.intel.com/akdlm/irc_nas/15944/l_openvino_toolkit_p_2019.3.334.tgz
 VIDEO_PATH=https://raw.githubusercontent.com/intel-iot-devkit/sample-videos/master/classroom.mp4
 file=l_openvino_toolkit_p_2019.3.334.tgz
 videofile=resources/classroom.mp4
@@ -266,7 +266,8 @@ check_yes_no
     else
 	echo "Downloading classroom video file. Please wait."
 	wget ${VIDEO_PATH}
-	check_for_errors "$?" "classroom video file download failed"
+	check_for_errors "$?" "classroom video file download failed" \
+				"classroom video file download completed"
 	mv classroom.mp4 resources/
     fi
 sudo chmod a+x *.sh
