@@ -1,4 +1,4 @@
-# Intelligent Classroom
+# Intelligent Virtualroom
 
 | Details            |              |
 |-----------------------|---------------|
